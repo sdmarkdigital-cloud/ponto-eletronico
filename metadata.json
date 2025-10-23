@@ -1,0 +1,8 @@
+{
+  "name": "Starker Goot - Ponto Eletrônico",
+  "description": "Um sistema web de bateria ponto eletrônico online para funcionários da Starker Goot Engenharia LTDA, com funcionalidades de login, registro de ponto com foto e geolocalização, relatórios de serviço, justificativas e um painel administrativo completo.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
