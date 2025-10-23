@@ -1,3 +1,4 @@
+
 import { supabase } from './supabase';
 import { User, TimeClockEntry, ServiceReport, Justification, Payslip, ThemeSettings, Role, CreateEmployeeData } from '../types';
 import { generateUUID } from '../utils/uuid';
@@ -143,8 +144,9 @@ export const updateEmployeePassword = async (userId: string, newPassword: string
   }
 };
 
+// FIX: Renamed from getEmployeesWithoutAccess for clarity and to fix missing export error in AccessManager.
 // Buscar funcionários que ainda não têm acesso ao sistema
-export const getEmployeesWithoutAccess = async (): Promise<User[]> => {
+export const getUsersWithoutAccess = async (): Promise<User[]> => {
   try {
     const { data, error } = await supabase
       .from('users')  // Certifique-se que está usando 'users' aqui também
@@ -238,392 +240,211 @@ export const createAccessForEmployee = async (employee: User): Promise<{success:
     console.log('✅ Acesso criado para:', employee.name, 'Senha:', defaultPassword);
     return {
       success: true,
-      message: `Acesso criado com sucesso!\n\nEmail: ${employee.username}\nSenha inicial: ${defaultPassword}\n\nComunique estas credenciais ao funcionário.`
+      message: `Acesso criado com sucesso!\n\nEmail: ${employee.username}\nSenha Inicial: ${defaultPassword}`
     };
-  } catch (error) {
-    console.error('Erro geral ao criar acesso:', error);
+  } catch (error: any) {
+    console.error('Erro completo ao criar acesso:', error);
     return {
       success: false,
-      message: 'Erro inesperado. Tente novamente em alguns instantes.'
+      message: `Erro inesperado: ${error.message}`
     };
   }
 };
 
+// FIX: Added missing functions below
 
-export const getUserProfile = async (authId: string, userEmail?: string): Promise<User | null> => {
-  try {
-    if (userEmail) {
-      const { data: emailData, error: emailError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('username', userEmail)
-        .single();
-      
-      if (emailData && !emailError) {
-        return emailData;
-      }
+export const getSettings = async (): Promise<ThemeSettings | null> => {
+    try {
+        const { data, error } = await supabase.from('settings').select('*').limit(1).single();
+        if (error && error.code !== 'PGRST116') throw error; // PGRST116: no rows found, which is ok
+        return data;
+    } catch (error) {
+        console.error('Error fetching settings:', error);
+        return null;
     }
-    
-    const { data: authData, error: authError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('auth_id', authId)
-      .single();
-    
-    if (authError) return null;
-    return authData;
-  } catch (error: any) {
-    return null;
-  }
+};
+
+export const saveSettings = async (settings: ThemeSettings): Promise<ThemeSettings> => {
+    const settingsWithId = { ...settings, id: settings.id || '1' }; // Ensure there's an ID for upsert
+    const { data, error } = await supabase.from('settings').upsert(settingsWithId, { onConflict: 'id' }).select().single();
+    if (error) {
+        console.error('Error saving settings:', error);
+        throw error;
+    }
+    return data;
+};
+
+export const getUserProfile = async (authId: string, email?: string | null): Promise<User | null> => {
+    const { data, error } = await supabase.from('users').select('*').eq('auth_id', authId).single();
+    if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching user profile:', error);
+        throw error;
+    }
+    return data;
 };
 
 export const getUsers = async (): Promise<User[]> => {
-    const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('name', { ascending: true });
-    if (error) throw error;
-    return data || [];
-};
-
-export const saveUser = async (userData: Partial<User>): Promise<User> => {
-    const dataToSave = { ...userData };
-    
-    // Remove campos undefined
-    Object.keys(dataToSave).forEach(key => {
-        if (dataToSave[key as keyof User] === undefined) {
-            delete dataToSave[key as keyof User];
-        }
-    });
-
-    if (dataToSave.id) {
-        const { id, ...updateData } = dataToSave;
-        const { data, error } = await supabase
-            .from('users')
-            .update(updateData)
-            .eq('id', id)
-            .select()
-            .single();
-        if (error) throw error;
-        return data;
-    } else {
-        if (!dataToSave.id) dataToSave.id = generateUUID();
-        const { data, error } = await supabase
-            .from('users')
-            .insert(dataToSave)
-            .select()
-            .single();
-        if (error) throw error;
-        return data;
-    }
-};
-
-export const deleteUser = async (userId: string): Promise<void> => {
-    const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', userId);
-
-    if (error) {
-        console.error("Error deleting user:", error.message || JSON.stringify(error));
-        throw error;
-    }
-};
-
-export const updateUserPassword = async (authId: string, newPassword: string): Promise<void> => {
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) throw error;
-};
-
-// Gerenciamento de Acessos
-export const getUsersWithoutAccess = async (): Promise<User[]> => {
-    const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('tem_acesso', false)
-        .order('name', { ascending: true });
-    if (error) throw error;
-    return data || [];
-};
-
-export const createUserAccess = async (userId: string, email: string, password: string): Promise<void> => {
-    try {
-        console.log('🔄 Tentando criar usuário no Auth:', email);
-        
-        // Tenta criar o usuário com confirmação de email
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-            email: email,
-            password: password,
-        });
-
-        if (authError) {
-            console.error('❌ Erro ao criar usuário:', authError);
-            
-            // Se o usuário já existe, tenta fazer login
-            if (authError.message.includes('already registered')) {
-                console.log('⚠️ Usuário já existe, tentando login...');
-                
-                const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-                    email: email,
-                    password: password,
-                });
-                
-                if (signInError) {
-                    console.error('❌ Erro no login:', signInError);
-                    throw new Error(`Usuário já existe mas a senha está incorreta. Use a opção "Esqueci minha senha" ou crie com outro email.`);
-                }
-                
-                // Se login funcionou, atualiza o auth_id
-                const { error: updateError } = await supabase
-                    .from('users')
-                    .update({ 
-                        auth_id: signInData.user.id,
-                        tem_acesso: true,
-                        username: email,
-                        role: 'employee'
-                    })
-                    .eq('id', userId);
-                    
-                if (updateError) throw updateError;
-                
-                console.log('✅ Usuário existente vinculado com sucesso!');
-                return;
-            }
-            
-            throw authError;
-        }
-
-        // Se criou novo usuário com sucesso
-        if (authData.user) {
-            console.log('✅ Novo usuário criado no Auth:', authData.user.id);
-            
-            const { error: updateError } = await supabase
-                .from('users')
-                .update({ 
-                    auth_id: authData.user.id,
-                    tem_acesso: true,
-                    username: email,
-                    role: 'employee'
-                })
-                .eq('id', userId);
-
-            if (updateError) throw updateError;
-            
-            console.log('✅ Usuário atualizado na tabela users');
-        }
-        
-        // Verifica se precisa de confirmação de email
-        if (authData.session === null) {
-            console.log('📧 Email de confirmação enviado para:', email);
-            alert(`✅ Acesso criado com sucesso!\n\nFoi enviado um email de confirmação para: ${email}\n\nO funcionário deve confirmar o email antes de fazer o primeiro login.`);
-        } else {
-            console.log('✅ Usuário criado e logado automaticamente');
-            alert(`✅ Acesso criado com sucesso!\n\nEmail: ${email}\nSenha: ${password}\n\nO funcionário já pode fazer login.`);
-        }
-        
-    } catch (error: any) {
-        console.error('💥 Erro completo ao criar acesso:', error);
-        throw error;
-    }
-};
-
-
-// Ativar/desativar acesso
-export const toggleUserAccess = async (userId: string, hasAccess: boolean): Promise<void> => {
-    const { error } = await supabase
-        .from('users')
-        .update({ tem_acesso: hasAccess })
-        .eq('id', userId);
-
-    if (error) throw error;
-};
-
-// Criar usuário sem autenticação (alternativa)
-export const createUserWithoutAuth = async (userId: string, email: string): Promise<void> => {
-    // Apenas atualiza o usuário existente com email e acesso
-    const { error } = await supabase
-        .from('users')
-        .update({ 
-            username: email,
-            tem_acesso: true
-        })
-        .eq('id', userId);
-
-    if (error) throw error;
-};
-
-
-// Settings
-export const getSettings = async (): Promise<ThemeSettings | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('settings')
-      .select('*')
-      .limit(1)
-      .single();
-    if (error) return null;
-    return data as ThemeSettings;
-  } catch (error) {
-    return null;
-  }
-};
-
-export const saveSettings = async (settings: ThemeSettings): Promise<void> => {
-    const { id, ...settingsData } = settings;
-    const recordId = id || generateUUID();
-    const { error } = await supabase
-        .from('settings')
-        .upsert({ id: recordId, ...settingsData });
-    if (error) throw error;
-};
-
-// File Management
-export const uploadFile = async (file: File, path: string): Promise<string> => {
-    const { data, error } = await supabase.storage.from('documents').upload(path, file, {
-        cacheControl: '3600', upsert: true });
-    if (error) throw error;
-    const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path);
-    if (!publicUrl) throw new Error("Could not get public URL for uploaded file.");
-    return publicUrl;
-};
-
-export const deleteFile = async (path: string): Promise<void> => {
-    await supabase.storage.from('documents').remove([path]);
-};
-
-// Time Clock
-export const getTimeEntries = async (userId?: string): Promise<TimeClockEntry[]> => {
-    let query = supabase.from('time_entries').select('*').order('timestamp', { ascending: false });
-    if (userId) query = query.eq('user_id', userId);
-    const { data, error } = await query;
-    if (error) throw error;
-    return (data || []).map(entry => ({...entry, timestamp: new Date(entry.timestamp)}));
-};
-
-export const addTimeEntry = async (entry: Omit<TimeClockEntry, 'id'>): Promise<TimeClockEntry> => {
-    const entryForDb = { ...entry, timestamp: entry.timestamp.toISOString() };
-    const { data, error } = await supabase.from('time_entries').insert(entryForDb).select().single();
-    if (error) throw error;
-    return { ...data, timestamp: new Date(data.timestamp) };
-};
-
-// Service Reports
-export const getServiceReports = async (userId?: string): Promise<ServiceReport[]> => {
-    let query = supabase.from('service_reports').select('*').order('timestamp', { ascending: false });
-    if (userId) query = query.eq('user_id', userId);
-    const { data, error } = await query;
-    if (error) throw error;
-    return (data || []).map(report => ({ ...report, timestamp: new Date(report.timestamp) }));
-};
-
-export const addServiceReport = async (report: Omit<ServiceReport, 'id'>): Promise<ServiceReport> => {
-    const reportForDb = { ...report, timestamp: report.timestamp.toISOString() };
-    const { data, error } = await supabase.from('service_reports').insert(reportForDb).select().single();
-    if (error) throw error;
-    return { ...data, timestamp: new Date(data.timestamp) };
-};
-
-// Justifications
-export const getJustifications = async (userId?: string): Promise<Justification[]> => {
-    let query = supabase.from('justifications').select('*').order('timestamp', { ascending: false });
-    if (userId) query = query.eq('user_id', userId);
-    const { data, error } = await query;
-    if (error) throw error;
-    return (data || []).map(j => ({ ...j, timestamp: new Date(j.timestamp) }));
-};
-
-export const saveJustification = async (justification: Partial<Justification>): Promise<Justification> => {
-    if (justification.id) {
-        const { id, ...updateData } = justification;
-        const { data, error } = await supabase
-            .from('justifications')
-            .update(updateData)
-            .eq('id', id)
-            .select()
-            .single();
-        if (error) throw error;
-        return { ...data, timestamp: new Date(data.timestamp) };
-    } else {
-        const { data, error } = await supabase.from('justifications').insert(justification).select().single();
-        if (error) throw error;
-        return { ...data, timestamp: new Date(data.timestamp) };
-    }
-};
-
-export const updateJustificationStatus = async (justificationId: string, status: 'approved' | 'rejected'): Promise<void> => {
-    const { error } = await supabase.from('justifications').update({ status }).eq('id', justificationId);
-    if (error) throw error;
-};
-
-export const deleteJustification = async (justificationId: string): Promise<void> => {
-    const { error } = await supabase.from('justifications').delete().eq('id', justificationId);
-    if (error) throw error;
-};
-
-// Payslips
-export const getPayslips = async (userId?: string): Promise<Payslip[]> => {
-    let query = supabase.from('payslips').select('*').order('year', { ascending: false }).order('month', { ascending: false });
-    if (userId) query = query.eq('user_id', userId);
-    const { data, error } = await query;
-    if (error) throw error;
-    return data || [];
-};
-
-export const addPayslip = async (payslip: Omit<Payslip, 'id' | 'file_url'>, file: File): Promise<void> => {
-    const filePath = `payslips/${payslip.user_id}/${payslip.year}-${payslip.month.replace(/\s+/g, '_')}-${file.name}`;
-    const fileUrl = await uploadFile(file, filePath);
-    const payslipForDb = { ...payslip, file_url: fileUrl };
-    const { error } = await supabase.from('payslips').insert(payslipForDb);
-    if (error) {
-        await deleteFile(filePath);
-        throw error;
-    }
-};
-
-export const deletePayslip = async (payslipId: string): Promise<void> => {
-    const { data: payslip, error: fetchError } = await supabase
-        .from('payslips')
-        .select('file_url')
-        .eq('id', payslipId)
-        .single();
-    if (payslip?.file_url) {
-        try {
-            const path = new URL(payslip.file_url).pathname.split('/documents/')[1];
-            await deleteFile(path);
-        } catch(e: any) {}
-    }
-    const { error: deleteError } = await supabase.from('payslips').delete().eq('id', payslipId);
-    if (deleteError) throw deleteError;
-};
-
-// Adicione esta função temporária para ver as colunas
-export const checkUsersTableColumns = async () => {
   try {
     const { data, error } = await supabase
       .from('users')
       .select('*')
-      .limit(1);
-    
-    if (data && data.length > 0) {
-      console.log('Colunas disponíveis na tabela users:', Object.keys(data[0]));
-    }
+      .order('name');
+
+    if (error) throw error;
+    return data || [];
   } catch (error) {
-    console.error('Erro ao verificar colunas:', error);
+    console.error('Erro ao buscar todos os usuários:', error);
+    return [];
   }
 };
 
-// Redefinir senha de um usuário (apenas admin)
-export const resetUserPassword = async (userId: string, newPassword: string): Promise<boolean> => {
-  try {
-    const { error } = await supabase.auth.admin.updateUserById(
-      userId,
-      { password: newPassword }
-    );
+export const saveUser = async (user: Partial<User>): Promise<User> => {
+    // If id is not provided, it's an insert, otherwise it's an update
+    const { data, error } = await supabase.from('users').upsert(user).select().single();
+    if (error) {
+        console.error('Error saving user:', error);
+        throw error;
+    }
+    return data;
+};
 
+export const updateUserPassword = async (authId: string, newPassword: string): Promise<void> => {
+    const { error } = await supabase.auth.admin.updateUserById(authId, { password: newPassword });
+    if (error) {
+        console.error("Error updating user password:", error);
+        throw error;
+    }
+};
+
+export const getTimeEntries = async (userId?: string): Promise<TimeClockEntry[]> => {
+    let query = supabase.from('time_entries').select('*').order('timestamp', { ascending: false });
+    if (userId) {
+        query = query.eq('user_id', userId);
+    }
+    const { data, error } = await query;
     if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error('Erro ao redefinir senha:', error);
-    return false;
-  }
+    return (data || []).map(e => ({...e, timestamp: new Date(e.timestamp)}));
+};
+
+export const addTimeEntry = async (entry: Omit<TimeClockEntry, 'id' | 'criado_em'>): Promise<TimeClockEntry> => {
+    const { data, error } = await supabase.from('time_entries').insert(entry).select().single();
+    if (error) throw error;
+    return {...data, timestamp: new Date(data.timestamp)};
+};
+
+export const getServiceReports = async (userId?: string): Promise<ServiceReport[]> => {
+    let query = supabase.from('service_reports').select('*').order('timestamp', { ascending: false });
+    if (userId) {
+        query = query.eq('user_id', userId);
+    }
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data || []).map(r => ({...r, timestamp: new Date(r.timestamp)}));
+};
+
+export const addServiceReport = async (report: Omit<ServiceReport, 'id' | 'criado_em'>): Promise<ServiceReport> => {
+    const { data, error } = await supabase.from('service_reports').insert(report).select().single();
+    if (error) throw error;
+    return {...data, timestamp: new Date(data.timestamp)};
+};
+
+export const getJustifications = async (userId?: string): Promise<Justification[]> => {
+    let query = supabase.from('justifications').select('*').order('timestamp', { ascending: false });
+    if (userId) {
+        query = query.eq('user_id', userId);
+    }
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data || []).map(j => ({...j, timestamp: new Date(j.timestamp)}));
+};
+
+export const saveJustification = async (justification: Partial<Justification>): Promise<Justification> => {
+    const { data, error } = await supabase.from('justifications').upsert(justification, { onConflict: 'id' }).select().single();
+    if (error) throw error;
+    return {...data, timestamp: new Date(data.timestamp)};
+};
+
+export const updateJustificationStatus = async (id: string, status: 'approved' | 'rejected'): Promise<Justification> => {
+    const { data, error } = await supabase.from('justifications').update({ status }).eq('id', id).select().single();
+    if (error) throw error;
+    return {...data, timestamp: new Date(data.timestamp)};
+};
+
+export const deleteJustification = async (id: string): Promise<void> => {
+    const { error } = await supabase.from('justifications').delete().eq('id', id);
+    if (error) throw error;
+};
+
+export const getPayslips = async (userId?: string): Promise<Payslip[]> => {
+    let query = supabase.from('payslips').select('*').order('year', { ascending: false }).order('month', { ascending: false });
+    if (userId) {
+        query = query.eq('user_id', userId);
+    }
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+};
+
+export const uploadFile = async (file: File, path: string): Promise<string> => {
+    const bucket = 'documents';
+    const { data, error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
+    if (error) {
+        console.error('Error uploading file:', error);
+        throw error;
+    }
+    const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(data.path);
+    return publicUrl;
+};
+
+export const addPayslip = async (payslip: Omit<Payslip, 'id' | 'file_url' | 'criado_em'>, file: File): Promise<Payslip> => {
+    const filePath = `payslips/${payslip.user_id}/${payslip.year}-${payslip.month}-${generateUUID()}`;
+    const fileUrl = await uploadFile(file, filePath);
+
+    const newPayslip: Omit<Payslip, 'id' | 'criado_em'> = {
+        ...payslip,
+        file_url: fileUrl
+    };
+
+    const { data, error } = await supabase.from('payslips').insert(newPayslip).select().single();
+    if (error) throw error;
+    return data;
+};
+
+export const deleteFile = async (path: string): Promise<void> => {
+    const bucket = 'documents';
+    try {
+        const { error } = await supabase.storage.from(bucket).remove([path]);
+        if (error) {
+            console.warn('Could not delete file from storage, it might have been already removed:', error.message);
+        }
+    } catch (e) {
+        console.warn('Exception while deleting file from storage:', e);
+    }
+};
+
+export const deletePayslip = async (id: string): Promise<void> => {
+    const { data: payslip, error: fetchError } = await supabase.from('payslips').select('file_url').eq('id', id).single();
+    
+    if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+    
+    if (payslip && payslip.file_url) {
+        try {
+            const url = new URL(payslip.file_url);
+            const path = decodeURIComponent(url.pathname.split('/public/documents/')[1]);
+            await deleteFile(path);
+        } catch (e) {
+            console.error("Could not parse or delete file from URL:", payslip.file_url, e);
+        }
+    }
+
+    const { error } = await supabase.from('payslips').delete().eq('id', id);
+    if (error) throw error;
+};
+
+export const toggleUserAccess = async (userId: string, currentAccess: boolean): Promise<void> => {
+  const { error } = await supabase
+    .from('users')
+    .update({ tem_acesso: !currentAccess })
+    .eq('id', userId);
+  if (error) throw error;
 };

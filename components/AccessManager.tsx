@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { getUsers, getUsersWithoutAccess, toggleUserAccess } from '../services/api';
@@ -59,7 +60,7 @@ const AccessManager: React.FC = () => {
 • ANOTE O UID GERADO
 
 2️⃣ NO SQL EDITOR:
-UPDATE usuarios 
+UPDATE users 
 SET auth_id = 'UID_ANOTADO_AQUI', 
     username = '${suggestedEmail}',
     tem_acesso = true,

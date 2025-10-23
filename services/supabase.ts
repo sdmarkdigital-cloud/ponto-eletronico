@@ -1,8 +1,22 @@
-// @ts-ignore
-const supabaseUrl = 'https://kvovgpfhoptwiffdkhgm.supabase.co';
-// @ts-ignore
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2b3ZncGZob3B0d2lmZmRraGdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNzQxODIsImV4cCI6MjA3Njc1MDE4Mn0.LWwoF0jh_ECKwxcncCnidfOaroi5IxMtUeVLcsdc5d0';
+import { createClient } from '@supabase/supabase-js';
 
-// @ts-ignore
-export const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-export const supabaseError = null;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+let supabaseInstance: any = null;
+let connectionError: string | null = null;
+
+if (!supabaseUrl || !supabaseKey) {
+  connectionError = "As variáveis de ambiente NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY não foram definidas.";
+  console.error(connectionError);
+} else {
+  try {
+    supabaseInstance = createClient(supabaseUrl, supabaseKey);
+  } catch (e: any) {
+    connectionError = `Falha ao criar o cliente Supabase: ${e.message}`;
+    console.error(connectionError);
+  }
+}
+
+export const supabase = supabaseInstance;
+export const supabaseError = connectionError;

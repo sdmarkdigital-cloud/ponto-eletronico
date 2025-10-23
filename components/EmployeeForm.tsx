@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { Sector, CreateEmployeeData } from '../types';
 import * as api from '../services/api';

@@ -1,6 +1,6 @@
-
+'use client';
 import React, { useContext } from 'react';
-import { AuthContext } from '../App';
+import { AuthContext } from './Providers';
 import { LogoutIcon } from './icons';
 import { User } from '../types';
 

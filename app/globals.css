@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #1A1A1A;
+  --color-secondary: #2D2D2D;
+  --color-accent: #FFC700;
+  --color-buttons: #FFC700;
+  --color-text-base: #FFFFFF;
+  --color-text-muted: #9CA3AF;
+  --color-text-button: #1A1A1A;
+}

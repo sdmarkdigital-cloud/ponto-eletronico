@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { User, Role, Benefits, Sector, WorkHours } from '../types';
 import TimePicker from './TimePicker';

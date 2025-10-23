@@ -1,5 +1,6 @@
+'use client';
 import React, { useState, useContext } from 'react';
-import { AuthContext } from '../App';
+import { AuthContext } from './Providers';
 import { supabase } from '../services/supabase';
 
 interface LoginScreenProps {

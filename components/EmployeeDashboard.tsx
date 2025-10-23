@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { User, ClockType, TimeClockEntry, ServiceReport, Justification, Payslip, LocationData } from '../types';
 import Header from './Header';

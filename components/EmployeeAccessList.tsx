@@ -1,3 +1,5 @@
+
+'use client';
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import * as api from '../services/api';
@@ -9,7 +11,8 @@ const EmployeeAccessList: React.FC = () => {
 
   const loadEmployees = async () => {
     setLoading(true);
-    const employeesList = await api.getEmployeesWithoutAccess();
+    // FIX: Use the renamed function getUsersWithoutAccess
+    const employeesList = await api.getUsersWithoutAccess();
     setEmployees(employeesList);
     setLoading(false);
   };

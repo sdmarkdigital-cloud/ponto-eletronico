@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect, useMemo, useRef, useContext } from 'react';
 import Header from './Header';
 import * as api from '../services/api';
@@ -5,7 +6,7 @@ import { supabase } from '../services/supabase';
 import { User, TimeClockEntry, ServiceReport, Justification, Payslip, Sector, AdminJustificationType, ClockType, WorkHours, Benefits, DailyBalance, TimeBankReport, Role } from '../types';
 import { UserGroupIcon, DocumentReportIcon, ClockIcon, TrashIcon, PencilIcon, CameraIcon, LocationMarkerIcon, UploadIcon, DownloadIcon, CalculatorIcon, PdfIcon, CogIcon, KeyIcon } from './icons';
 import EmployeeFormModal from './EmployeeFormModal';
-import { ThemeContext } from '../App';
+import { ThemeContext } from './Providers';
 import TimePicker from './TimePicker';
 import EmployeeAccessList from './EmployeeAccessList';
 
