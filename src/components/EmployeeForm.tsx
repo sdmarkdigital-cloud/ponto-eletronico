@@ -1,6 +1,6 @@
 'use client';
+import { CreateEmployeeData, Sector } from '@/types';
 import React, { useState } from 'react';
-import { Sector, CreateEmployeeData } from '../types';
 import * as api from '../services/api';
 
 interface EmployeeFormProps {
@@ -43,14 +43,14 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess, onCancel }) => {
 
     try {
       const success = await api.createEmployeeWithAccess(formData);
-      
+
       if (success) {
         const defaultPassword = formData.cpf.replace(/\D/g, '').slice(0, 6);
         setMessage({
           type: 'success',
           text: `Funcionário cadastrado com sucesso! Senha inicial: ${defaultPassword}`
         });
-        
+
         setFormData({
           name: '',
           email: '',
@@ -87,13 +87,12 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess, onCancel }) => {
   return (
     <div className="bg-secondary rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-6">Cadastrar Novo Funcionário</h2>
-      
+
       {message && (
-        <div className={`p-4 mb-4 rounded-md ${
-          message.type === 'success' 
-            ? 'bg-green-500 text-white' 
+        <div className={`p-4 mb-4 rounded-md ${message.type === 'success'
+            ? 'bg-green-500 text-white'
             : 'bg-red-500 text-white'
-        }`}>
+          }`}>
           {message.text}
         </div>
       )}
@@ -286,7 +285,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess, onCancel }) => {
           >
             {loading ? 'Cadastrando...' : 'Cadastrar Funcionário'}
           </button>
-          
+
           {onCancel && (
             <button
               type="button"

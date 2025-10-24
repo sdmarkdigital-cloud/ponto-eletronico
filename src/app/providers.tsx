@@ -1,38 +1,37 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, createContext } from 'react';
-import { User, Role, ThemeSettings } from '../typings';
+import React, { createContext, useEffect, useMemo, useState } from 'react';
 import * as api from '../services/api';
-import { supabase, supabaseError } from '../services/supabase';
+import { supabase } from '../services/supabase';
+import { Role, ThemeSettings, User } from '../typings';
 
 // Default settings provide a fallback if nothing is in the DB
 const defaultSettings: ThemeSettings = {
-    theme: 'dark',
-    colors: {
-      primary: '#1A1A1A',
-      secondary: '#2D2D2D',
-      accent: '#FFC700',
-      buttons: '#FFC700',
-      textBase: '#FFFFFF',
-      textMuted: '#9CA3AF',
-      textButton: '#1A1A1A',
-    },
-    loginmessage: 'Sistema de Ponto Eletrônico',
-    companysettings: {
-        companyName: 'Starker Goot Engenharia LTDA',
-        cnpj: '12.345.678/0001-99',
-        legalName: 'Starker Goot Engenharia e Serviços LTDA',
-        address: 'Rua Principal, 123, São Paulo - SP',
-        contactEmail: 'contato@starkergoot.com.br',
-        logoUrl: null,
-        workStartTime: '08:00',
-        lunchStartTime: '12:00',
-        lunchEndTime: '13:00',
-        workEndTime: '18:00',
-    },
-    sectorworkhours: {},
+  theme: 'dark',
+  colors: {
+    primary: '#1A1A1A',
+    secondary: '#2D2D2D',
+    accent: '#FFC700',
+    buttons: '#FFC700',
+    textBase: '#FFFFFF',
+    textMuted: '#9CA3AF',
+    textButton: '#1A1A1A',
+  },
+  loginmessage: 'Sistema de Ponto Eletrônico',
+  companysettings: {
+    companyName: 'Starker Goot Engenharia LTDA',
+    cnpj: '12.345.678/0001-99',
+    legalName: 'Starker Goot Engenharia e Serviços LTDA',
+    address: 'Rua Principal, 123, São Paulo - SP',
+    contactEmail: 'contato@starkergoot.com.br',
+    logoUrl: null,
+    workStartTime: '08:00',
+    lunchStartTime: '12:00',
+    lunchEndTime: '13:00',
+    workEndTime: '18:00',
+  },
+  sectorworkhours: {},
 };
-
 
 export const AuthContext = createContext<{
   user: User | null;
@@ -41,116 +40,98 @@ export const AuthContext = createContext<{
   loadingSession: boolean;
 }>({
   user: null,
-  logout: () => {},
+  logout: () => { },
   login: async () => false,
   loadingSession: true,
 });
-
 
 export const ThemeContext = createContext<{
   themeSettings: ThemeSettings;
   setThemeSettings: React.Dispatch<React.SetStateAction<ThemeSettings>>;
 }>({
   themeSettings: defaultSettings,
-  setThemeSettings: () => {},
+  setThemeSettings: () => { },
 });
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  if (supabaseError) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-primary text-text-base p-4">
-        <div className="w-full max-w-2xl p-8 space-y-4 bg-secondary rounded-xl shadow-lg text-center">
-          <h2 className="text-3xl font-extrabold text-red-500">Erro de Configuração</h2>
-          <p className="text-lg text-text-muted">A conexão com o banco de dados falhou.</p>
-          <div className="text-left bg-primary p-4 rounded-md font-mono text-sm text-red-400 overflow-x-auto">
-            <code>{supabaseError}</code>
-          </div>
-          <p className="text-text-muted mt-4">
-            Para corrigir, crie um arquivo chamado <strong className="text-accent">.env.local</strong> na pasta principal do projeto e adicione suas chaves do Supabase.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+  // ✅ hooks sempre fora de condicionais
   const [user, setUser] = useState<User | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultSettings);
-  
+
   useEffect(() => {
     const loadInitialSettings = async () => {
-        try {
-            const savedSettings = await api.getSettings();
-            if (savedSettings) {
-                setThemeSettings(prev => ({
-                    ...prev,
-                    ...savedSettings,
-                    colors: { ...prev.colors, ...savedSettings.colors },
-                    companysettings: { ...prev.companysettings, ...savedSettings.companysettings }
-                }));
-            }
-        } catch (e) {
-            console.error("Could not load initial settings.", e);
+      try {
+        const savedSettings = await api.getSettings();
+        if (savedSettings) {
+          setThemeSettings((prev) => ({
+            ...prev,
+            ...savedSettings,
+            colors: { ...prev.colors, ...savedSettings.colors },
+            companysettings: { ...prev.companysettings, ...savedSettings.companysettings },
+          }));
         }
+      } catch (e) {
+        console.error('Could not load initial settings.', e);
+      }
     };
     loadInitialSettings();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
-        let failsafeTimer: number | undefined;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      let failsafeTimer: number | undefined;
 
-        const handleAuthSession = async () => {
-            try {
-                if (session?.user) {
-                    const adminEmails = ['rh1@admin.com', 'rh2@admin.com', 'rh3@admin.com', 'rh4@admin.com'];
-                    const isAdmin = adminEmails.includes(session.user.email ?? '');
+      const handleAuthSession = async () => {
+        try {
+          if (session?.user) {
+            const adminEmails = ['rh1@admin.com', 'rh2@admin.com', 'rh3@admin.com', 'rh4@admin.com'];
+            const isAdmin = adminEmails.includes(session.user.email ?? '');
 
-                    if (isAdmin) {
-                        const adminProfile: User = {
-                            id: session.user.id,
-                            auth_id: session.user.id,
-                            username: session.user.email!,
-                            name: 'Administrador RH',
-                            role: Role.ADMIN,
-                            is_active: true,
-                            tem_acesso: true
-                        };
-                        setUser(adminProfile);
-                    } else {
-                        const userProfile = await api.getUserProfile(session.user.id, session.user.email);
-                        if (userProfile && userProfile.tem_acesso) {
-                            setUser(userProfile);
-                        } else {
-                            const reason = userProfile ? "não tem permissão de acesso" : "não foi encontrado";
-                            alert(`Seu usuário foi autenticado, mas seu perfil ${reason}. Entre em contato com o RH.`);
-                            await api.logoutUser();
-                        }
-                    }
-
-                } else {
-                    setUser(null);
-                }
-            } catch (error) {
-                console.error("Erro durante a verificação da sessão:", error);
-                setUser(null);
-            } finally {
-                if (failsafeTimer) clearTimeout(failsafeTimer);
-                setLoadingSession(false);
+            if (isAdmin) {
+              const adminProfile: User = {
+                id: session.user.id,
+                auth_id: session.user.id,
+                username: session.user.email!,
+                name: 'Administrador RH',
+                role: Role.ADMIN,
+                is_active: true,
+                tem_acesso: true,
+              };
+              setUser(adminProfile);
+            } else {
+              const userProfile = await api.getUserProfile(session.user.id, session.user.email);
+              if (userProfile && userProfile.tem_acesso) {
+                setUser(userProfile);
+              } else {
+                const reason = userProfile ? 'não tem permissão de acesso' : 'não foi encontrado';
+                alert(`Seu usuário foi autenticado, mas seu perfil ${reason}. Entre em contato com o RH.`);
+                await api.logoutUser();
+              }
             }
-        };
+          } else {
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('Erro durante a verificação da sessão:', error);
+          setUser(null);
+        } finally {
+          if (failsafeTimer) clearTimeout(failsafeTimer);
+          setLoadingSession(false);
+        }
+      };
 
-        failsafeTimer = window.setTimeout(() => {
-            if (loadingSession) {
-              setLoadingSession(false);
-            }
-        }, 8000);
+      failsafeTimer = window.setTimeout(() => {
+        if (loadingSession) {
+          setLoadingSession(false);
+        }
+      }, 8000);
 
-        handleAuthSession();
+      handleAuthSession();
     });
 
     return () => {
-        subscription.unsubscribe();
+      subscription.unsubscribe();
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const root = document.documentElement;
@@ -169,25 +150,30 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     }
     root.style.setProperty('--color-accent', themeSettings.colors.accent);
     root.style.setProperty('--color-buttons', themeSettings.colors.buttons);
-
   }, [themeSettings]);
 
-  const authContextValue = useMemo(() => ({
-    user,
-    loadingSession,
-    login: (username: string, pass: string) => api.loginUser(username, pass),
-    logout: () => {
-      api.logoutUser();
-      setUser(null);
-    },
-  }), [user, loadingSession]);
-  
-  const themeContextValue = useMemo(() => ({
-    themeSettings,
-    setThemeSettings,
-  }), [themeSettings]);
+  const authContextValue = useMemo(
+    () => ({
+      user,
+      loadingSession,
+      login: (username: string, pass: string) => api.loginUser(username, pass),
+      logout: () => {
+        api.logoutUser();
+        setUser(null);
+      },
+    }),
+    [user, loadingSession]
+  );
 
-  if (loadingSession && !supabaseError) {
+  const themeContextValue = useMemo(
+    () => ({
+      themeSettings,
+      setThemeSettings,
+    }),
+    [themeSettings]
+  );
+
+  if (loadingSession) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-primary text-text-muted">
         Carregando sessão...
@@ -197,9 +183,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={authContextValue}>
-      <ThemeContext.Provider value={themeContextValue}>
-        {children}
-      </ThemeContext.Provider>
+      <ThemeContext.Provider value={themeContextValue}>{children}</ThemeContext.Provider>
     </AuthContext.Provider>
   );
 }
