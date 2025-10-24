@@ -1292,8 +1292,8 @@ const AdminDashboard: React.FC = () => {
       if (!isWeekend && employeeSchedule.workStartTime && employeeSchedule.workEndTime) {
         const start = parseTimeStringToMinutes(employeeSchedule.workStartTime);
         const end = parseTimeStringToMinutes(employeeSchedule.workEndTime);
-        const lunchStart = parseTimeStringToMinutes(employeeSchedule.lunchStartTime);
-        const lunchEnd = parseTimeStringToMinutes(employeeSchedule.lunchEndTime);
+        const lunchStart = parseTimeStringToMinutes(employeeSchedule.lunchStartTime ?? '');
+        const lunchEnd = parseTimeStringToMinutes(employeeSchedule.lunchEndTime ?? '');
         expectedMinutes = (end - start) - (lunchEnd - lunchStart);
       }
 
