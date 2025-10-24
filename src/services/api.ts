@@ -332,7 +332,7 @@ export const getTimeEntries = async (userId?: string): Promise<TimeClockEntry[]>
   }
   const { data, error } = await query;
   if (error) throw error;
-  return (data || []).map(e => ({ ...e, timestamp: new Date(e.timestamp) }));
+  return (data || []).map((e: { timestamp: string | number | Date; }) => ({ ...e, timestamp: new Date(e.timestamp) }));
 };
 
 export const addTimeEntry = async (entry: Omit<TimeClockEntry, 'id' | 'criado_em'>): Promise<TimeClockEntry> => {
@@ -348,7 +348,7 @@ export const getServiceReports = async (userId?: string): Promise<ServiceReport[
   }
   const { data, error } = await query;
   if (error) throw error;
-  return (data || []).map(r => ({ ...r, timestamp: new Date(r.timestamp) }));
+  return (data || []).map((r: { timestamp: string | number | Date; }) => ({ ...r, timestamp: new Date(r.timestamp) }));
 };
 
 export const addServiceReport = async (report: Omit<ServiceReport, 'id' | 'criado_em'>): Promise<ServiceReport> => {
@@ -364,7 +364,7 @@ export const getJustifications = async (userId?: string): Promise<Justification[
   }
   const { data, error } = await query;
   if (error) throw error;
-  return (data || []).map(j => ({ ...j, timestamp: new Date(j.timestamp) }));
+  return (data  || []).map((j: { timestamp: string | number | Date; }) => ({ ...j, timestamp: new Date(j.timestamp) }));
 };
 
 export const saveJustification = async (justification: Partial<Justification>): Promise<Justification> => {

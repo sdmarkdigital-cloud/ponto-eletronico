@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useContext } from 'react';
-import { AuthContext } from './Providers';
 import { supabase } from '../services/supabase';
+import { AuthContext } from '../app/providers';
 
 interface LoginScreenProps {
   customMessage?: string;

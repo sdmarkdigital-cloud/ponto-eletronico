@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import { User, ClockType, TimeClockEntry, ServiceReport, Justification, Payslip, LocationData } from '../types';
+import { User, ClockType, TimeClockEntry, ServiceReport, Justification, Payslip, LocationData } from '@/types';
 import Header from './Header';
 import { CameraIcon, LocationMarkerIcon, ClockIcon } from './icons';
 import { useGeolocation } from '../hooks/useGeolocation';

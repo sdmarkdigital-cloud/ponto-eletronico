@@ -4,6 +4,7 @@ import React, { createContext, useEffect, useMemo, useState } from 'react';
 import * as api from '../services/api';
 import { supabase } from '../services/supabase';
 import { Role, ThemeSettings, User } from '../typings';
+import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 // Default settings provide a fallback if nothing is in the DB
 const defaultSettings: ThemeSettings = {
@@ -59,79 +60,79 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   const [loadingSession, setLoadingSession] = useState(true);
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultSettings);
 
-  useEffect(() => {
-    const loadInitialSettings = async () => {
-      try {
-        const savedSettings = await api.getSettings();
-        if (savedSettings) {
-          setThemeSettings((prev) => ({
-            ...prev,
-            ...savedSettings,
-            colors: { ...prev.colors, ...savedSettings.colors },
-            companysettings: { ...prev.companysettings, ...savedSettings.companysettings },
-          }));
-        }
-      } catch (e) {
-        console.error('Could not load initial settings.', e);
+useEffect(() => {
+  const loadInitialSettings = async () => {
+    try {
+      const savedSettings = await api.getSettings();
+      if (savedSettings) {
+        setThemeSettings(prev => ({
+          ...prev,
+          ...savedSettings,
+          colors: { ...prev.colors, ...savedSettings.colors },
+          companysettings: { ...prev.companysettings, ...savedSettings.companysettings },
+        }));
       }
-    };
-    loadInitialSettings();
+    } catch (error) {
+      console.error('Could not load initial settings.', error);
+    }
+  };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      let failsafeTimer: number | undefined;
+  loadInitialSettings();
 
-      const handleAuthSession = async () => {
-        try {
-          if (session?.user) {
-            const adminEmails = ['rh1@admin.com', 'rh2@admin.com', 'rh3@admin.com', 'rh4@admin.com'];
-            const isAdmin = adminEmails.includes(session.user.email ?? '');
+  let failsafeTimer: ReturnType<typeof setTimeout>;
 
-            if (isAdmin) {
-              const adminProfile: User = {
-                id: session.user.id,
-                auth_id: session.user.id,
-                username: session.user.email!,
-                name: 'Administrador RH',
-                role: Role.ADMIN,
-                is_active: true,
-                tem_acesso: true,
-              };
-              setUser(adminProfile);
-            } else {
-              const userProfile = await api.getUserProfile(session.user.id, session.user.email);
-              if (userProfile && userProfile.tem_acesso) {
-                setUser(userProfile);
-              } else {
-                const reason = userProfile ? 'não tem permissão de acesso' : 'não foi encontrado';
-                alert(`Seu usuário foi autenticado, mas seu perfil ${reason}. Entre em contato com o RH.`);
-                await api.logoutUser();
-              }
-            }
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    async (_event: AuthChangeEvent, session: Session | null) => {
+      try {
+        if (session?.user) {
+          const adminEmails = ['rh1@admin.com', 'rh2@admin.com', 'rh3@admin.com', 'rh4@admin.com'];
+          const isAdmin = adminEmails.includes(session.user.email ?? '');
+
+          if (isAdmin) {
+            const adminProfile: User = {
+              id: session.user.id,
+              auth_id: session.user.id,
+              username: session.user.email!,
+              name: 'Administrador RH',
+              role: Role.ADMIN,
+              is_active: true,
+              tem_acesso: true,
+            };
+            setUser(adminProfile);
           } else {
-            setUser(null);
+            const userProfile = await api.getUserProfile(session.user.id, session.user.email);
+            if (userProfile && userProfile.tem_acesso) {
+              setUser(userProfile);
+            } else {
+              const reason = userProfile ? 'não tem permissão de acesso' : 'não foi encontrado';
+              alert(`Seu usuário foi autenticado, mas seu perfil ${reason}. Entre em contato com o RH.`);
+              await api.logoutUser();
+              setUser(null);
+            }
           }
-        } catch (error) {
-          console.error('Erro durante a verificação da sessão:', error);
+        } else {
           setUser(null);
-        } finally {
-          if (failsafeTimer) clearTimeout(failsafeTimer);
-          setLoadingSession(false);
         }
-      };
+      } catch (error) {
+        console.error('Erro durante a verificação da sessão:', error);
+        setUser(null);
+      } finally {
+        clearTimeout(failsafeTimer);
+        setLoadingSession(false);
+      }
+    }
+  );
 
-      failsafeTimer = window.setTimeout(() => {
-        if (loadingSession) {
-          setLoadingSession(false);
-        }
-      }, 8000);
+  // ✅ Timeout de segurança — garante que loading não trave
+  failsafeTimer = setTimeout(() => {
+    setLoadingSession(false);
+  }, 8000);
 
-      handleAuthSession();
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return () => {
+    clearTimeout(failsafeTimer);
+    subscription.unsubscribe();
+  };
+}, [setThemeSettings, setUser, setLoadingSession]);
 
   useEffect(() => {
     const root = document.documentElement;
