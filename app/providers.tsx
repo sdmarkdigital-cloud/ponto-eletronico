@@ -65,8 +65,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           <div className="text-left bg-primary p-4 rounded-md font-mono text-sm text-red-400 overflow-x-auto">
             <code>{supabaseError}</code>
           </div>
-          <p className="text-text-muted">
-            Por favor, configure suas variáveis de ambiente NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY e recarregue a página.
+          <p className="text-text-muted mt-4">
+            Para corrigir, crie um arquivo chamado <strong className="text-accent">.env.local</strong> na pasta principal do projeto e adicione suas chaves do Supabase.
           </p>
         </div>
       </div>
@@ -187,7 +187,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     setThemeSettings,
   }), [themeSettings]);
 
-  if (loadingSession) {
+  if (loadingSession && !supabaseError) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-primary text-text-muted">
         Carregando sessão...
