@@ -102,8 +102,8 @@ export interface ThemeSettings {
     textMuted: string;
     textButton: string;
   };
-  loginMessage: string;
-  companySettings: {
+  loginmessage: string;
+  companysettings: {
     companyName: string;
     cnpj: string;
     legalName: string;
@@ -115,7 +115,7 @@ export interface ThemeSettings {
     lunchEndTime: string;
     workEndTime: string;
   };
-  sectorWorkHours: Record<string, Partial<WorkHours>>;
+  sectorworkhours: Record<string, Partial<WorkHours>>;
   criado_em?: string;
 }
 

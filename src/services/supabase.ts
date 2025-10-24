@@ -7,7 +7,7 @@ let supabaseInstance: any = null;
 let connectionError: string | null = null;
 
 // Verificação robusta para garantir que as variáveis não são apenas strings vazias ou os placeholders
-if (!supabaseUrl || supabaseUrl === 'SUA_URL_DO_SUPABASE_AQUI' || !supabaseKey || supabaseKey === 'SUA_CHAVE_ANONIMA_DO_SUPABASE_AQUI') {
+if (!supabaseUrl || !supabaseKey) {
   connectionError = "As variáveis de ambiente do Supabase não foram configuradas. Por favor, edite o arquivo .env.local na raiz do projeto com suas credenciais.";
   console.error(connectionError);
 } else {

@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, createContext } from 'react';
-import { User, Role, ThemeSettings } from '../typings';
 import * as api from '../services/api';
 import { supabase, supabaseError } from '../services/supabase';
+import { Role, ThemeSettings, User } from '@/types';
 
 // Default settings provide a fallback if nothing is in the DB
 const defaultSettings: ThemeSettings = {
@@ -17,8 +17,8 @@ const defaultSettings: ThemeSettings = {
       textMuted: '#9CA3AF',
       textButton: '#1A1A1A',
     },
-    loginMessage: 'Sistema de Ponto Eletrônico',
-    companySettings: {
+    loginmessage: 'Sistema de Ponto Eletrônico',
+    companysettings: {
         companyName: 'Starker Goot Engenharia LTDA',
         cnpj: '12.345.678/0001-99',
         legalName: 'Starker Goot Engenharia e Serviços LTDA',
@@ -30,7 +30,7 @@ const defaultSettings: ThemeSettings = {
         lunchEndTime: '13:00',
         workEndTime: '18:00',
     },
-    sectorWorkHours: {},
+    sectorworkhours: {},
 };
 
 
@@ -38,12 +38,10 @@ export const AuthContext = createContext<{
   user: User | null;
   logout: () => void;
   login: (username: string, pass: string) => Promise<boolean>;
-  loadingSession: boolean;
 }>({
   user: null,
   logout: () => {},
   login: async () => false,
-  loadingSession: true,
 });
 
 
@@ -65,8 +63,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           <div className="text-left bg-primary p-4 rounded-md font-mono text-sm text-red-400 overflow-x-auto">
             <code>{supabaseError}</code>
           </div>
-          <p className="text-text-muted mt-4">
-            Para corrigir, crie um arquivo chamado <strong className="text-accent">.env.local</strong> na pasta principal do projeto e adicione suas chaves do Supabase.
+          <p className="text-text-muted">
+            Por favor, configure suas variáveis de ambiente NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY e recarregue a página.
           </p>
         </div>
       </div>
@@ -86,7 +84,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                     ...prev,
                     ...savedSettings,
                     colors: { ...prev.colors, ...savedSettings.colors },
-                    companySettings: { ...prev.companySettings, ...savedSettings.companySettings }
+                    companysettings: { ...prev.companysettings, ...savedSettings.companysettings }
                 }));
             }
         } catch (e) {
@@ -95,7 +93,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     };
     loadInitialSettings();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         let failsafeTimer: number | undefined;
 
         const handleAuthSession = async () => {
@@ -174,20 +172,19 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   const authContextValue = useMemo(() => ({
     user,
-    loadingSession,
     login: (username: string, pass: string) => api.loginUser(username, pass),
     logout: () => {
       api.logoutUser();
       setUser(null);
     },
-  }), [user, loadingSession]);
+  }), [user]);
   
   const themeContextValue = useMemo(() => ({
     themeSettings,
     setThemeSettings,
   }), [themeSettings]);
 
-  if (loadingSession && !supabaseError) {
+  if (loadingSession) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-primary text-text-muted">
         Carregando sessão...

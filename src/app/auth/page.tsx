@@ -131,7 +131,7 @@ const LoginPage: React.FC = () => {
               STARKER GOOT ENGENHARIA
             </h2>
             <p className="text-text-muted mt-1">
-              {themeSettings.loginMessage || 'Sistema de Ponto Eletrônico'}
+              {themeSettings.loginmessage || 'Sistema de Ponto Eletrônico'}
             </p>
           </div>
 
