@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
-import Providers from "../components/Providers";
+import Providers from "./providers";
 import React from "react";
 
 export const metadata: Metadata = {

@@ -85,7 +85,7 @@ export const UploadIcon: React.FC<IconProps> = ({ title, ...props }) => (
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
     </svg>
 );
-
+// FIX: Add missing icons to resolve import errors.
 export const DownloadIcon: React.FC<IconProps> = ({ title, ...props }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
         {title && <title>{title}</title>}
@@ -96,22 +96,22 @@ export const DownloadIcon: React.FC<IconProps> = ({ title, ...props }) => (
 export const CalculatorIcon: React.FC<IconProps> = ({ title, ...props }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
         {title && <title>{title}</title>}
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h.01M12 12h.01M15 12h.01M9 15h.01M12 15h.01M15 15h.01" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm3-6h.008v.008H11.25v-.008Zm0 3h.008v.008H11.25v-.008Zm0 3h.008v.008H11.25v-.008Zm3-6h.008v.008H14.25v-.008Zm0 3h.008v.008H14.25v-.008ZM12 6.75h2.25A2.25 2.25 0 0 1 16.5 9v.75a2.25 2.25 0 0 1-2.25 2.25H12v-3Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.75 21v-6.75a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 14.25v6.75A2.25 2.25 0 0 0 5.25 24h13.5A2.25 2.25 0 0 0 18.75 21Z" />
     </svg>
 );
+
 
 export const PdfIcon: React.FC<IconProps> = ({ title, ...props }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
         {title && <title>{title}</title>}
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6M9 17h6m2 4H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 2v4a2 2 0 002 2h4" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
 );
 
 export const KeyIcon: React.FC<IconProps> = ({ title, ...props }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
         {title && <title>{title}</title>}
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 9v.75a3 3 0 01-3 3h-3a3 3 0 01-3-3V9m0 0a3 3 0 013-3h3a3 3 0 013 3m-3.75 6.75v.007" />
     </svg>
 );

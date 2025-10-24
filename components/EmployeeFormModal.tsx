@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { User, Role, Benefits, Sector, WorkHours } from '../types';
+import { User, Role, Benefits, Sector, WorkHours } from '../typings';
 import TimePicker from './TimePicker';
 
 interface EmployeeFormModalProps {
@@ -176,7 +176,6 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ employee, onClose
                     <div>
                         <label className="block text-sm font-medium text-text-muted mb-1">Setor</label>
                         <select name="setor" value={formData.setor || ''} onChange={handleChange} className="w-full bg-primary border-gray-700 rounded-md shadow-sm p-2 text-text-base focus:ring-accent focus:border-accent">
-                          {/* FIX: Explicitly type 'sector' as string to resolve TS error. */}
                           {Object.values(Sector).map((sector: string) => (
                             <option key={sector} value={sector}>{sector}</option>
                           ))}

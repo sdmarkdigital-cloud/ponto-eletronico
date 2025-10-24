@@ -1,8 +1,8 @@
 'use client';
 import React, { useContext } from 'react';
-import { AuthContext } from './Providers';
+import { AuthContext } from '../app/providers';
 import { LogoutIcon } from './icons';
-import { User } from '../types';
+import { User } from '../typings';
 
 const Header: React.FC = () => {
   const { user, logout } = useContext(AuthContext);

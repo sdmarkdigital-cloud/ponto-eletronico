@@ -1,10 +1,11 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
-import { User, ClockType, TimeClockEntry, ServiceReport, Justification, Payslip, LocationData } from '../types';
-import Header from './Header';
-import { CameraIcon, LocationMarkerIcon, ClockIcon } from './icons';
-import { useGeolocation } from '../hooks/useGeolocation';
-import * as api from '../services/api';
+import React, { useState, useEffect, useRef, useContext } from 'react';
+import { useRouter } from 'next/navigation';
+import { User, ClockType, TimeClockEntry, ServiceReport, Justification, Payslip, LocationData, Role } from '../../../typings';
+import { CameraIcon, LocationMarkerIcon, ClockIcon } from '../../../components/icons';
+import { useGeolocation } from '../../../hooks/useGeolocation';
+import * as api from '../../../services/api';
+import { AuthContext } from '../../providers';
 
 const getLocalDateString = (date: Date) => {
     const year = date.getFullYear();
@@ -253,12 +254,10 @@ const EmployeeDashboard: React.FC<{ user: User }> = ({ user }) => {
             speed: location.speed,
         } : null;
 
-        // FIX: Correct the type of newEntry to match the expected type in the API call.
         const newEntry: Omit<TimeClockEntry, 'id' | 'criado_em'> = {
             user_id: user.id,
             user_name: user.name,
-            // FIX: Add non-null assertion as currentClockType is checked at the start of the function.
-            type: currentClockType!,
+            type: currentClockType,
             timestamp: new Date(),
             location: plainLocation,
             photo: photoUrl,
@@ -342,7 +341,6 @@ const EmployeeDashboard: React.FC<{ user: User }> = ({ user }) => {
             api.uploadFile(signatureFile, `reports/signatures/${user.id}/${signatureFile.name}`)
         ]);
 
-        // FIX: Correct the type of newReport to match the expected type in the API call.
         const newReport: Omit<ServiceReport, 'id' | 'criado_em'> = {
             user_id: user.id,
             user_name: user.name,
@@ -442,7 +440,6 @@ const EmployeeDashboard: React.FC<{ user: User }> = ({ user }) => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       {isCapturing && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-secondary p-6 rounded-lg shadow-xl w-full max-w-lg">
@@ -467,7 +464,7 @@ const EmployeeDashboard: React.FC<{ user: User }> = ({ user }) => {
           </div>
         </div>
       )}
-      <main className="flex-grow p-4 md:p-8">
+      <div className="flex-grow p-4 md:p-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-accent">Painel do Colaborador</h2>
@@ -654,9 +651,30 @@ const EmployeeDashboard: React.FC<{ user: User }> = ({ user }) => {
           )}
 
         </div>
-      </main>
+      </div>
     </div>
   );
 };
 
-export default EmployeeDashboard;
+
+// Page component that handles auth state
+export default function EmployeeDashboardPage() {
+    const { user, loadingSession } = useContext(AuthContext);
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!loadingSession && (!user || user.role !== Role.EMPLOYEE)) {
+            router.replace('/auth');
+        }
+    }, [user, loadingSession, router]);
+
+    if (loadingSession || !user) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-primary text-text-muted">
+                Verificando acesso...
+            </div>
+        );
+    }
+    
+    return <EmployeeDashboard user={user} />;
+}

@@ -1,24 +1,30 @@
 'use client';
-import React, { useContext } from 'react';
-import LoginScreen from '../components/LoginScreen';
-import EmployeeDashboard from '../components/EmployeeDashboard';
-import AdminDashboard from '../components/AdminDashboard';
-import { AuthContext, ThemeContext } from '../components/Providers';
-import { Role } from '../types';
+import React, { useContext, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { AuthContext } from './providers';
+import { Role } from '../typings';
 
 export default function HomePage() {
-  const { user } = useContext(AuthContext);
-  const { themeSettings } = useContext(ThemeContext);
+  const { user, loadingSession } = useContext(AuthContext);
+  const router = useRouter();
 
-  if (!user) {
-    return <LoginScreen customMessage={themeSettings.loginMessage} />;
-  }
-  if (user.role === Role.ADMIN) {
-    return <AdminDashboard />;
-  }
-  if (user.role === Role.EMPLOYEE) {
-    return <EmployeeDashboard user={user} />;
-  }
-  
-  return <LoginScreen customMessage={themeSettings.loginMessage} />;
+  useEffect(() => {
+    if (loadingSession) {
+      return; // Wait for session to be loaded
+    }
+
+    if (!user) {
+      router.replace('/auth');
+    } else if (user.role === Role.ADMIN) {
+      router.replace('/dashboard/admin');
+    } else if (user.role === Role.EMPLOYEE) {
+      router.replace('/dashboard/employees');
+    }
+  }, [user, loadingSession, router]);
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-primary text-text-muted">
+      Carregando...
+    </div>
+  );
 }
